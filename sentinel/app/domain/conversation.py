@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sentinel.app.models import ChatMessageModel, UserMemoryModel
+from sentinel.app.models import ChatMessageModel, UserMemoryModel, UserJournalModel
 from sentinel.app.domain.profile import get_default_profile, UserProfile
 from sentinel.app.providers.gateway import AIGateway
 from sentinel.app.providers.base import TaskType
@@ -27,6 +27,12 @@ MEMORY_TRIGGERS = [
     r"my\s+goal\s+is\s+(.*)",
     r"my\s+target\s+is\s+(.*)",
     r"we\s+use\s+(.*)",
+]
+
+STACK_DETECTION_KEYWORDS = [
+    "vllm", "airflow", "dbt", "pytorch", "fastapi", "postgres", "sql", "duckdb",
+    "polars", "rag", "langgraph", "docker", "redis", "kafka", "spark", "opencv",
+    "yolo", "latency", "pipeline", "serving", "inference", "etl", "models", "endpoint"
 ]
 
 
@@ -105,8 +111,8 @@ class ConversationEngine:
     ) -> str:
         """
         Processes a conversational message:
-        1. Auto-extracts any memory cues (e.g. 'remember that...')
-        2. Retrieves long-term memories & recent chat history
+        1. Auto-detects role intake statements and triggers deep questionnaire
+        2. Auto-extracts memory cues and job details
         3. Formulates context-rich prompt and generates response
         4. Saves turns to persistent database
         """
@@ -114,7 +120,53 @@ class ConversationEngine:
         if not clean_msg:
             return "How can I help you today with your AI and data engineering systems?"
 
-        # 1. Auto-extract memory cues
+        # Check for role statement intake trigger
+        role_pattern = r"\b(i am|i'm|my role is|work as)?\s*(a\s+)?(data\s+(and|&)\s+ai\s+engineer|ai\s+(and|&)\s+data\s+engineer|data\s+engineer|ai\s+engineer|ml\s+engineer)\b"
+        is_role_statement = bool(re.search(role_pattern, clean_msg, re.IGNORECASE))
+        has_extended_job_details = len(clean_msg.split()) >= 15
+
+        if is_role_statement and not has_extended_job_details:
+            reply = (
+                f"🎯 **Awesome, {self.profile.name}!**\n\n"
+                "As your Staff AI & Data Engineering mentor, I want to calibrate everything directly to your day-to-day systems. "
+                "Tell me a bit more about what you do in your job:\n\n"
+                "1. ⚙️ **Core Workload**: Are you primarily building real-time LLM inference endpoints (vLLM, Ollama), fine-tuning models, or orchestrating data pipelines (Airflow, dbt)?\n"
+                "2. 🗄️ **Data & Serving Stack**: What databases, streaming queues, and vector stores are in your active production systems?\n"
+                "3. ⚡ **Current Bottlenecks**: What is your team's biggest headache right now (e.g. inference latency/TTFT, GPU VRAM fragmentation, schema drift, evals)?\n\n"
+                "Explain everything you do, and I'll extract and structure your technical profile!"
+            )
+            bot_turn = ChatMessageModel(
+                user_id=user_id,
+                role="assistant",
+                content=reply,
+                created_at=datetime.now(timezone.utc),
+            )
+            session.add(bot_turn)
+            await self.add_memory(session, user_id, "Role: Data and AI Engineer", category="work")
+            await session.commit()
+            return reply
+
+        # Auto-extract job details if user is describing their work
+        msg_lower = clean_msg.lower()
+        matched_tools = [k for k in STACK_DETECTION_KEYWORDS if k in msg_lower]
+        if len(matched_tools) >= 2 and ("job" in msg_lower or "work" in msg_lower or "build" in msg_lower or "pipeline" in msg_lower):
+            await self.add_memory(
+                session,
+                user_id,
+                f"Day-Job Work Context: {clean_msg[:200]}",
+                category="work",
+            )
+            journal_entry = UserJournalModel(
+                user_id=user_id,
+                entry_type="work",
+                content=clean_msg,
+                tags=", ".join(matched_tools[:5]),
+                created_at=datetime.now(timezone.utc),
+            )
+            session.add(journal_entry)
+            await session.commit()
+
+        # 1. Auto-extract memory cues (e.g. 'remember that...')
         extracted_fact = await self.auto_extract_memories(session, user_id, clean_msg)
 
         # 2. Save user message to database
@@ -158,12 +210,15 @@ class ConversationEngine:
             f"- Production Stack: {', '.join(self.profile.work_context.stack)}\n\n"
             f"## Long-Term Memory (Facts Remembered from Past Turns):\n"
             f"{memories_text}\n\n"
-            f"## Instructions:\n"
-            f"- Speak naturally, pragmatically, and conversationally like a senior teammate.\n"
-            f"- Remember and reference facts they told you earlier.\n"
-            f"- Give rigorous, production-grade technical advice with concrete examples.\n"
-            f"- Calibrate any local suggestions to their RTX 4060 (8GB VRAM).\n"
-            f"- Keep responses concise and focused on high-signal engineering reality."
+            f"## Specialized Response Directives (MANDATORY):\n"
+            f"1. STRUCTURED JOB INTAKE: When the user explains what they do in their job, extract and present a structured summary (Core Workloads, Active Stack, Pain Points) and confirm it is stored in working memory.\n"
+            f"2. RESEARCH PAPERS (NO BULK JARGON): Never dump raw papers or mathematical abstracts. For any paper discussed, explain:\n"
+            f"   • 🎯 Exact Aim: What core technical problem or limitation does it break?\n"
+            f"   • 🔬 What It Contains: The concrete architectural mechanism in plain English.\n"
+            f"   • 🛠️ How It Directly Helps YOUR Projects: Concrete application to the user's stack (e.g. vLLM, RTX 4060 8GB, Airflow/dbt). Never give academic fluff.\n"
+            f"3. AUTOMATIC MODEL COMPARISON (PROS & CONS): Whenever any AI model is mentioned or released, AUTO-COMPARE it with the industry incumbent baseline (e.g. LLaMA-3.1-8B, Mistral-7B) without waiting for the user to ask. Detail 🟢 Pros and 🔴 Cons, and provide an exact hardware fit verdict for RTX 4060 (8GB VRAM).\n"
+            f"4. 10:00 AM MORNING INTELLIGENCE: The bot automatically compiles and delivers high-signal daily briefs every day at 10:00 AM IST.\n"
+            f"5. TONE: Pragmatic, Senior Staff Engineer, conversational, concise, and direct."
         )
 
         full_prompt = (

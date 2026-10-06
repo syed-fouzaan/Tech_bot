@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # Ingestion & Polling Defaults
     INGEST_POLL_INTERVAL_HOURS: int = 4
-    DIGEST_DELIVERY_TIME_IST: str = "08:00"
+    DIGEST_DELIVERY_TIME_IST: str = "10:00"
 
     @field_validator("DAILY_AI_BUDGET")
     @classmethod

@@ -34,3 +34,26 @@ class ComparisonEngine:
             task=TaskType.COMPARISON,
         )
         return response.content
+
+    async def auto_compare_model_release(self, new_model_name: str, baseline: str = "LLaMA-3.1-8B", user_vram_gb: float = 8.0) -> str:
+        """
+        Automatically compares a newly released model against an incumbent industry baseline,
+        providing pros, cons, and a local hardware fit verdict without prompting the user.
+        """
+        system_prompt = (
+            "You are a Staff AI Systems Architect. A new AI model has been released. "
+            "Automatically compare it against the established incumbent baseline model without requiring the engineer to ask.\n"
+            "Structure:\n"
+            "1. 🥊 Baseline Matchup: [New Model] vs [Incumbent Baseline]\n"
+            "2. 🟢 Pros: (Throughput, architecture innovations, license, context length)\n"
+            "3. 🔴 Cons & Caveats: (VRAM footprint, tooling support, runtime overhead)\n"
+            f"4. ⚖️ Verdict for RTX 4060 ({user_vram_gb}GB VRAM): (Can it run FP16/INT8/AWQ? Should you switch?)"
+        )
+        prompt = f"Perform automated side-by-side comparison between newly released model '{new_model_name}' and industry baseline '{baseline}'."
+        response = await self.gateway.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            task=TaskType.COMPARISON,
+        )
+        return response.content
+
