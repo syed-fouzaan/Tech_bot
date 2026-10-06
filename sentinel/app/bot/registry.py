@@ -34,6 +34,8 @@ COMMANDS: Dict[str, CommandInfo] = {
     "review": CommandInfo(name="review", description="Weekly review of work wins, topics learned, and roadmaps"),
     "search": CommandInfo(name="search", args="<query>", description="Search verified knowledge store"),
     "profile": CommandInfo(name="profile", description="View and manage user profile and skill inventory"),
+    "memory": CommandInfo(name="memory", args="[add <fact>|clear]", description="View, add, or clear facts stored in long-term AI memory"),
+    "clear": CommandInfo(name="clear", description="Reset current conversational history for a fresh chat session"),
     "help": CommandInfo(name="help", description="Show command list and quick reference guide"),
 }
 

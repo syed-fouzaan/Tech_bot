@@ -63,6 +63,13 @@ class MockProvider:
                 "💻 PRACTICAL ACTION\n"
                 "- Benchmark 4-bit quantization on a sample model."
             )
+        elif task == TaskType.CHAT:
+            content = (
+                f"I've noted that! Regarding your engineering query: '{prompt[:100]}...', "
+                f"from a production AI architecture perspective, consider verifying memory saturation on your RTX 4060, "
+                f"benchmarking kernel execution times, and isolating data pipeline dependencies. "
+                f"I've updated my working memory with this context."
+            )
         else:
             content = f"Analysis completed for task '{task.value}'. Key insights verified against source evidence."
 

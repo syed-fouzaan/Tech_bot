@@ -189,11 +189,42 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         resp = await cmd_handler.handle_review()
         await safe_reply(message, resp, parse_mode=None)
 
+    @dp.message(Command("memory"))
+    async def cmd_memory(message: Message):
+        if not await check_auth(message):
+            return
+        args = message.text.replace("/memory", "").strip() if message.text else ""
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_memory(args, session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("clear"))
+    async def cmd_clear(message: Message):
+        if not await check_auth(message):
+            return
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_clear(session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
     @dp.message(Command("help"))
     async def cmd_help(message: Message):
         if not await check_auth(message):
             return
         resp = await cmd_handler.handle_help()
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message()
+    async def handle_conversational_chat(message: Message):
+        """Conversational AI: speaks naturally, remembers multi-turn context and long-term user facts."""
+        if not await check_auth(message):
+            return
+        if not message.text or message.text.startswith("/"):
+            return
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_conversation(message.text, session, user_id=user_id)
         await safe_reply(message, resp, parse_mode=None)
 
     return dp

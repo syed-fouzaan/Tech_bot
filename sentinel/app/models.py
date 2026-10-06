@@ -127,6 +127,29 @@ class UserJournalModel(Base):
     created_at = Column(DateTime, default=utc_now)
 
 
+class ChatMessageModel(Base):
+    """Stores multi-turn conversational history between user and bot."""
+    __tablename__ = "chat_messages"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, nullable=False, index=True)
+    role = Column(String(16), nullable=False)  # user, assistant
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class UserMemoryModel(Base):
+    """Long-term memory storing explicit and inferred user facts, preferences, and context."""
+    __tablename__ = "user_memories"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, nullable=False, index=True)
+    memory_text = Column(Text, nullable=False)
+    category = Column(String(32), default="fact")  # preference, work, learning, fact
+    created_at = Column(DateTime, default=utc_now)
+
+
+
 
 class ProviderUsageModel(Base):
     """Tracks token consumption and enforces DB-level $0 cost check constraint."""

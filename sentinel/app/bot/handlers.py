@@ -14,6 +14,7 @@ from sentinel.app.domain.hardware import calculate_hardware_fit
 from sentinel.app.domain.comparison import ComparisonEngine
 from sentinel.app.domain.advisor import AdvisorEngine
 from sentinel.app.domain.career_advisor import CareerAdvisorEngine
+from sentinel.app.domain.conversation import ConversationEngine
 from sentinel.app.domain.win import WorkImpactEngine
 from sentinel.app.domain.lab import LabEngine
 from sentinel.app.domain.dependencies import parse_dependency_manifest, check_dependency_impact, PinnedDependency
@@ -27,6 +28,7 @@ class BotCommandHandler:
         advisor_engine: Optional[AdvisorEngine] = None,
         lab_engine: Optional[LabEngine] = None,
         career_advisor: Optional[CareerAdvisorEngine] = None,
+        conversation_engine: Optional[ConversationEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -35,6 +37,7 @@ class BotCommandHandler:
         self.comparison = comparison_engine or ComparisonEngine()
         self.advisor = advisor_engine or AdvisorEngine()
         self.career_advisor = career_advisor or CareerAdvisorEngine()
+        self.conversation = conversation_engine or ConversationEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -324,6 +327,45 @@ class BotCommandHandler:
             "🎯 **Next Week's Work Focus**: Benchmark AWQ quantization on staging container.\n"
             "🏆 **Growth Opportunity**: Present tech-share on vLLM PagedAttention to the team."
         )
+
+    async def handle_conversation(self, message_text: str, session: AsyncSession, user_id: int = 0) -> str:
+        """Processes natural conversation, remembering context and long-term user facts."""
+        return await self.conversation.chat(session, user_id=user_id, user_message=message_text)
+
+    async def handle_memory(self, args: str, session: AsyncSession, user_id: int = 0) -> str:
+        """Manages long-term memories: /memory, /memory add <fact>, /memory clear."""
+        args = args.strip()
+        if args == "clear":
+            cleared_count = await self.conversation.clear_memories(session, user_id)
+            return f"🧹 Cleared {cleared_count} saved memory item(s) from your long-term profile."
+
+        if args.startswith("add "):
+            fact = args.replace("add ", "").strip()
+            if fact:
+                await self.conversation.add_memory(session, user_id, fact)
+                return f"🧠 Saved to long-term memory: '{fact}'\nI will remember this in all future conversations."
+
+        memories = await self.conversation.get_memories(session, user_id)
+        if not memories:
+            return (
+                "🧠 **Sentinel Long-Term AI Memory**\n\n"
+                "No custom memories saved yet.\n\n"
+                "💡 *How memory works*:\n"
+                "• Tell me naturally: `\"Remember that I prefer PyTorch over TensorFlow\"`\n"
+                "• Or explicitly add: `/memory add <fact>`\n"
+                "• To clear: `/memory clear`"
+            )
+
+        lines = ["🧠 **Sentinel Long-Term AI Memory (Known Facts About You)**\n"]
+        for idx, m in enumerate(memories, 1):
+            lines.append(f"{idx}. {m.memory_text}")
+        lines.append("\n💡 *To add a fact*: `/memory add <fact>` | *To clear*: `/memory clear`")
+        return "\n".join(lines)
+
+    async def handle_clear(self, session: AsyncSession, user_id: int = 0) -> str:
+        """Resets recent chat turn history."""
+        count = await self.conversation.clear_history(session, user_id)
+        return f"🔄 Chat history reset ({count} turns cleared). Ready for a new conversation!"
 
     async def handle_help(self) -> str:
         return get_help_text()
