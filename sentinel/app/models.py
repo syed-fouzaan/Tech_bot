@@ -115,6 +115,19 @@ class WorkImpactLogModel(Base):
     confidentiality = Column(String(32), default="abstracted")  # abstracted, private-local, public
 
 
+class UserJournalModel(Base):
+    """Tracks what the user works on, what they learned, and their specific interests."""
+    __tablename__ = "user_journal"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, nullable=False, index=True)
+    entry_type = Column(String(32), nullable=False)  # work, learned, interest
+    content = Column(Text, nullable=False)
+    tags = Column(String(256), nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+
+
 class ProviderUsageModel(Base):
     """Tracks token consumption and enforces DB-level $0 cost check constraint."""
     __tablename__ = "provider_usage"

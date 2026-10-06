@@ -53,8 +53,9 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
     async def cmd_today(message: Message):
         if not await check_auth(message):
             return
+        user_id = message.from_user.id if message.from_user else 0
         async with async_session_maker() as session:
-            resp = await cmd_handler.handle_today(session)
+            resp = await cmd_handler.handle_today(session, user_id=user_id)
         await safe_reply(message, resp, parse_mode="HTML")
 
     @dp.message(Command("important"))
@@ -131,7 +132,39 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
     async def cmd_work(message: Message):
         if not await check_auth(message):
             return
-        resp = await cmd_handler.handle_work()
+        args = message.text.replace("/work", "").strip() if message.text else ""
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_work(args, session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("learned"))
+    async def cmd_learned(message: Message):
+        if not await check_auth(message):
+            return
+        args = message.text.replace("/learned", "").strip() if message.text else ""
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_learned(args, session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("career"))
+    async def cmd_career(message: Message):
+        if not await check_auth(message):
+            return
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_career(session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("interests"))
+    async def cmd_interests(message: Message):
+        if not await check_auth(message):
+            return
+        args = message.text.replace("/interests", "").strip() if message.text else ""
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_interests(args, session, user_id=user_id)
         await safe_reply(message, resp, parse_mode=None)
 
     @dp.message(Command("win"))

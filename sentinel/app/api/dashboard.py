@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sentinel.app.db.session import get_db
-from sentinel.app.models import ItemModel
+from sentinel.app.models import ItemModel, UserJournalModel
 from sentinel.app.domain.profile import get_default_profile
 from sentinel.app.domain.roadmap import RoadmapEngine
 from sentinel.app.domain.dependencies import parse_dependency_manifest
@@ -30,12 +30,18 @@ async def serve_dashboard(session: AsyncSession = Depends(get_db)) -> str:
     res = await session.execute(stmt)
     items = list(res.scalars().all())
 
+    # Fetch recent journal entries (work, learned, interests)
+    j_stmt = select(UserJournalModel).order_by(UserJournalModel.created_at.desc()).limit(6)
+    j_res = await session.execute(j_stmt)
+    journal_items = list(j_res.scalars().all())
+
     roadmap_summary = roadmap_engine.get_summary()
     pinned_deps = parse_dependency_manifest(DEFAULT_MANIFEST)
 
     items_html = ""
     for it in items:
         badge_color = "#10b981" if it.priority == "MUST_KNOW" else ("#3b82f6" if it.priority == "SHOULD_KNOW" else "#f59e0b")
+        pub_date = it.published_at.strftime("%b %d, %Y") if it.published_at else "Verified"
         items_html += f"""
         <div class="card item-card">
             <div class="item-header">
@@ -43,7 +49,7 @@ async def serve_dashboard(session: AsyncSession = Depends(get_db)) -> str:
                     {it.priority}
                 </span>
                 <span class="marker">{it.epistemic_marker}</span>
-                <span class="time">{it.source_id.upper()}</span>
+                <span class="time">📅 {pub_date} · {it.source_id.upper()}</span>
             </div>
             <h3 class="item-title">{it.title}</h3>
             <p class="item-why"><strong>Why you:</strong> {it.why_it_matters or 'Ecosystem development'}</p>
@@ -80,6 +86,23 @@ async def serve_dashboard(session: AsyncSession = Depends(get_db)) -> str:
             <small>Theory: {int(n['theory_confidence']*100)}% | Practice: {int(n['practice_confidence']*100)}%</small>
         </div>
         """
+
+    journal_html = ""
+    if journal_items:
+        for j in journal_items:
+            type_color = "#10b981" if j.entry_type == "work" else ("#6366f1" if j.entry_type == "learned" else "#f59e0b")
+            time_str = j.created_at.strftime("%b %d") if j.created_at else "Recent"
+            journal_html += f"""
+            <div style="padding: 8px 10px; margin-bottom: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span style="font-size: 10px; font-weight: 700; color: {type_color}; text-transform: uppercase;">{j.entry_type}</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">{time_str}</span>
+                </div>
+                <p style="font-size: 12px; color: #d1d5db; margin: 0;">{j.content}</p>
+            </div>
+            """
+    else:
+        journal_html = '<p style="font-size: 12px; color: var(--text-muted);">No logs yet. Use <code>/work</code> or <code>/learned</code> in Telegram.</p>'
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -307,6 +330,31 @@ async def serve_dashboard(session: AsyncSession = Depends(get_db)) -> str:
                     <div class="card">
                         <div class="roadmap-grid">
                             {roadmap_html}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Career Advisor Panel -->
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <span>🎯</span>
+                        <span>Career & Skills Intelligence</span>
+                    </div>
+                    <div class="card">
+                        <div style="margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; color: var(--accent); font-weight: 700;">Target Goal</span>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff; margin-top: 2px;">{profile.target_role}</div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; color: var(--emerald); font-weight: 700;">Recent Work & Learned Logs</span>
+                            <div style="margin-top: 6px;">
+                                {journal_html}
+                            </div>
+                        </div>
+                        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 10px;">
+                            <span style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.5px;">DECLARED: NEXT TO LEARN</span>
+                            <div style="font-size: 13px; font-weight: 600; color: #fff; margin-top: 4px;">Continuous Chunked Prefill & Speculative Decoding</div>
+                            <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">Run <code>/career</code> in Telegram for full gap diagnosis & live exercises.</small>
                         </div>
                     </div>
                 </div>

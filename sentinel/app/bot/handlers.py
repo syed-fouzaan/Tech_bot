@@ -13,6 +13,7 @@ from sentinel.app.domain.srs import SRSEngine
 from sentinel.app.domain.hardware import calculate_hardware_fit
 from sentinel.app.domain.comparison import ComparisonEngine
 from sentinel.app.domain.advisor import AdvisorEngine
+from sentinel.app.domain.career_advisor import CareerAdvisorEngine
 from sentinel.app.domain.win import WorkImpactEngine
 from sentinel.app.domain.lab import LabEngine
 from sentinel.app.domain.dependencies import parse_dependency_manifest, check_dependency_impact, PinnedDependency
@@ -25,6 +26,7 @@ class BotCommandHandler:
         comparison_engine: Optional[ComparisonEngine] = None,
         advisor_engine: Optional[AdvisorEngine] = None,
         lab_engine: Optional[LabEngine] = None,
+        career_advisor: Optional[CareerAdvisorEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -32,6 +34,7 @@ class BotCommandHandler:
         self.srs = SRSEngine()
         self.comparison = comparison_engine or ComparisonEngine()
         self.advisor = advisor_engine or AdvisorEngine()
+        self.career_advisor = career_advisor or CareerAdvisorEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -48,7 +51,7 @@ class BotCommandHandler:
             "Use `/today` for your morning brief, or `/help` to see all available commands."
         )
 
-    async def handle_today(self, session: AsyncSession) -> str:
+    async def handle_today(self, session: AsyncSession, user_id: int = 0) -> str:
         stmt = select(ItemModel).order_by(ItemModel.importance_score.desc()).limit(15)
         res = await session.execute(stmt)
         items = list(res.scalars().all())
@@ -59,7 +62,8 @@ class BotCommandHandler:
                 "No items indexed yet today. Trigger an ingestion pass via the API or wait for the scheduled job."
             )
 
-        return format_daily_digest(items, scanned_count=124, accepted_count=len(items))
+        declared = await self.career_advisor.diagnose_career_path(session, user_id=user_id)
+        return format_daily_digest(items, scanned_count=124, accepted_count=len(items), declared_learning=declared)
 
     async def handle_important(self, session: AsyncSession) -> str:
         stmt = (
@@ -182,15 +186,102 @@ class BotCommandHandler:
             f"⚠️ *{res.disclaimer}*"
         )
 
-    async def handle_work(self) -> str:
+    async def handle_work(self, args: str = "", session: Optional[AsyncSession] = None, user_id: int = 0) -> str:
+        args = args.strip()
+        if args and session is not None:
+            await self.career_advisor.record_journal_entry(session, user_id=user_id, entry_type="work", content=args)
+            diag = await self.career_advisor.diagnose_career_path(session, user_id=user_id)
+            return (
+                "🏢 **Work Activity Logged Successfully!**\n\n"
+                f"• **Logged**: {args}\n\n"
+                "🎯 **Personal Career Advisor Feedback**:\n"
+                f"This strengthens your path to **{diag['target_role']}**.\n\n"
+                f"🚀 **Declared Next Step**: {diag['declared_next_topic']}\n"
+                f"💡 *Strategic Rationale*: {diag['why_next']}\n\n"
+                f"💻 *Production Challenge*: {diag['real_world_example']}"
+            )
+
         wc = self.profile.work_context
+        recent_text = "• No recent work logged."
+        if session is not None:
+            recent = await self.career_advisor.get_recent_entries(session, user_id=user_id, entry_type="work", limit=3)
+            if recent:
+                recent_text = "\n".join([f"• {r.content} ({r.created_at.strftime('%b %d')})" for r in recent])
         return (
-            "🏢 **Work Context & Stack Registration**\n\n"
+            "🏢 **Work Context & Activity Journal**\n\n"
             f"• **Domain**: {wc.domain}\n"
             f"• **Confidentiality Mode**: `{wc.confidentiality_mode}` (No employer secrets sent to external models)\n"
             f"• **Registered Stack**: {', '.join(wc.stack)}\n"
             f"• **Current Problem Themes**: {', '.join(wc.current_problem_themes)}\n\n"
-            "Log your impact wins using `/win <title>`."
+            f"**Recent Logged Work**:\n{recent_text}\n\n"
+            "💡 *To log your work today*: `/work <description>`\n"
+            "Example: `/work Built streaming vLLM inference endpoint with Redis cache`"
+        )
+
+    async def handle_learned(self, args: str, session: AsyncSession, user_id: int = 0) -> str:
+        args = args.strip()
+        if not args:
+            recent = await self.career_advisor.get_recent_entries(session, user_id=user_id, entry_type="learned", limit=3)
+            recent_text = "\n".join([f"• {r.content} ({r.created_at.strftime('%b %d')})" for r in recent]) if recent else "• No recent learnings logged."
+            return (
+                "🧠 **Learning Journal & Skill Progression**\n\n"
+                f"**Recent Logged Learnings**:\n{recent_text}\n\n"
+                "💡 *To record a learning & receive your next milestone*: `/learned <concept/framework>`\n"
+                "Example: `/learned Understood FlashAttention-2 tiling and memory hierarchy`"
+            )
+
+        await self.career_advisor.record_journal_entry(session, user_id=user_id, entry_type="learned", content=args)
+        diag = await self.career_advisor.diagnose_career_path(session, user_id=user_id)
+        return (
+            "🧠 **Knowledge Logged & Skill Level Updated!**\n\n"
+            f"• **You Learned**: {args}\n\n"
+            "🚀 **DECLARED: WHAT YOU MUST LEARN NEXT**\n"
+            f"• **Topic**: {diag['declared_next_topic']}\n"
+            f"• **Why it matters**: {diag['why_next']}\n\n"
+            "💻 **REAL-WORLD PRODUCTION SCENARIO**\n"
+            f"• {diag['real_world_example']}\n\n"
+            "Run `/career` for full gap diagnosis and `/lab` for benchmark code."
+        )
+
+    async def handle_career(self, session: AsyncSession, user_id: int = 0) -> str:
+        diag = await self.career_advisor.diagnose_career_path(session, user_id=user_id)
+        recent_work_str = "\n".join([f"  • {w}" for w in diag['recent_work']]) if diag['recent_work'] else "  • (No recent work entries logged yet)"
+        recent_learn_str = "\n".join([f"  • {l}" for l in diag['recent_learned']]) if diag['recent_learned'] else "  • (No recent learning entries logged yet)"
+
+        lines = [
+            f"🎯 **Personal Career & Skills Advisor — {self.profile.name}**",
+            f"Target Role: **{diag['target_role']}**\n",
+            "🛠️ **Recent Work Execution**:",
+            recent_work_str,
+            "\n💡 **Recent Concept Mastery**:",
+            recent_learn_str,
+            f"\n🔥 **Registered Interests**: {', '.join(diag['interests'])}",
+            "\n" + "—"*28,
+            "🚀 **DECLARED: WHAT YOU MUST LEARN NEXT**",
+            f"• **{diag['declared_next_topic']}**",
+            f"  *Strategic Rationale*: {diag['why_next']}\n",
+            "💻 **REAL-WORLD PRODUCTION SCENARIO**",
+            f"• {diag['real_world_example']}\n",
+            "💡 *Commands to update your profile*: `/work <task>`, `/learned <topic>`, `/interests add <topic>`"
+        ]
+        return "\n".join(lines)
+
+    async def handle_interests(self, args: str, session: AsyncSession, user_id: int = 0) -> str:
+        args = args.strip()
+        if args.startswith("add "):
+            topic = args.replace("add ", "").strip()
+            if topic:
+                await self.career_advisor.record_journal_entry(session, user_id=user_id, entry_type="interest", content=topic)
+                return f"✅ Registered **{topic}** in your personal interests! Sentinel will prioritize this topic."
+
+        entries = await self.career_advisor.get_recent_entries(session, user_id=user_id, entry_type="interest", limit=10)
+        custom_interests = [e.content for e in entries]
+        all_interests = list(dict.fromkeys(custom_interests + self.profile.interests))
+        return (
+            "🔥 **Your Registered Interests & Preferences**\n\n"
+            "Sentinel prioritizes intelligence and labs matching these topics:\n"
+            + "\n".join([f"• {i}" for i in all_interests])
+            + "\n\n💡 *To add an interest*: `/interests add <topic>` (e.g. `/interests add Agentic evals`)"
         )
 
     async def handle_win(self, args: str) -> str:
