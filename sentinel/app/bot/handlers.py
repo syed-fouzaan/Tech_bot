@@ -26,6 +26,11 @@ from sentinel.app.domain.pr_reviewer import PRReviewerEngine
 from sentinel.app.domain.migration_roi import MigrationROIEngine
 from sentinel.app.domain.executive_status import ExecutiveStatusEngine
 from sentinel.app.domain.design_patterns import DesignPatternEngine
+from sentinel.app.domain.sql_optimizer import SQLOptimizerEngine
+from sentinel.app.domain.cost_calculator import CostCalculatorEngine
+from sentinel.app.domain.runbook_generator import RunbookEngine
+from sentinel.app.domain.data_ninja import DataNinjaEngine
+from sentinel.app.domain.standup_soundbite import StandupSoundbiteEngine
 
 
 class BotCommandHandler:
@@ -45,6 +50,11 @@ class BotCommandHandler:
         migration_roi: Optional[MigrationROIEngine] = None,
         status_engine: Optional[ExecutiveStatusEngine] = None,
         pattern_engine: Optional[DesignPatternEngine] = None,
+        sql_optimizer: Optional[SQLOptimizerEngine] = None,
+        cost_calc: Optional[CostCalculatorEngine] = None,
+        runbook_engine: Optional[RunbookEngine] = None,
+        data_ninja: Optional[DataNinjaEngine] = None,
+        soundbite_engine: Optional[StandupSoundbiteEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -62,6 +72,11 @@ class BotCommandHandler:
         self.migration_roi = migration_roi or MigrationROIEngine()
         self.status_engine = status_engine or ExecutiveStatusEngine()
         self.pattern_engine = pattern_engine or DesignPatternEngine()
+        self.sql_optimizer = sql_optimizer or SQLOptimizerEngine()
+        self.cost_calc = cost_calc or CostCalculatorEngine()
+        self.runbook_engine = runbook_engine or RunbookEngine()
+        self.data_ninja = data_ninja or DataNinjaEngine()
+        self.soundbite_engine = soundbite_engine or StandupSoundbiteEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -434,6 +449,26 @@ class BotCommandHandler:
     async def handle_pattern(self, args: str = "") -> str:
         """Staff System Design Pattern: battle-tested distributed AI and data architecture blueprints."""
         return self.pattern_engine.get_pattern(args if args else None)
+
+    async def handle_optimize_sql(self, args: str = "") -> str:
+        """Slow SQL & Pipeline Optimizer: query plan bottlenecks, rewrites & indexes."""
+        return await self.sql_optimizer.optimize(args)
+
+    async def handle_calc_cost(self, args: str = "") -> str:
+        """LLM Cost & Token Budget: API billing vs self-hosted GPU break-even."""
+        return self.cost_calc.parse_and_calculate(args)
+
+    async def handle_runbook(self, args: str = "") -> str:
+        """Production Runbook Generator: golden signals, alarms & emergency recovery commands."""
+        return await self.runbook_engine.generate_runbook(args)
+
+    async def handle_data_ninja(self, args: str = "") -> str:
+        """Data Wrangling & SQL Ninja: window functions, complex JSON flattening & DuckDB/Polars."""
+        return await self.data_ninja.solve_transform(args)
+
+    async def handle_soundbite(self, args: str = "") -> str:
+        """Standup Soundbite: 45-second conversational script & tech take for meetings."""
+        return await self.soundbite_engine.generate_soundbite(args)
 
     async def handle_help(self) -> str:
         return get_help_text()

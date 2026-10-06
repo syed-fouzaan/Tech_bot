@@ -93,6 +93,35 @@ async def test_bot_handlers_new_commands():
     assert "Chunked Prefill" in pattern_msg
     assert "Production Implementation Blueprint" in pattern_msg
 
+    # /optimize_sql
+    sql_usage = await handler.handle_optimize_sql("")
+    assert "SQL & Pipeline Optimizer" in sql_usage
+    sql_opt = await handler.handle_optimize_sql("SELECT * FROM events e JOIN users u ON e.user_id = u.id WHERE e.ts > '2025-01-01'")
+    assert len(sql_opt) > 10
+
+    # /calc_cost
+    cost_usage = await handler.handle_calc_cost("")
+    assert "Cost & Token Budget" in cost_usage
+    cost_res = await handler.handle_calc_cost("10000 gpt-4o")
+    assert "Monthly" in cost_res or "Cost" in cost_res
+
+    # /runbook
+    runbook_vllm = await handler.handle_runbook("vllm")
+    assert "vLLM Inference Service" in runbook_vllm
+    assert "Golden Signals" in runbook_vllm
+
+    # /data_ninja
+    ninja_usage = await handler.handle_data_ninja("")
+    assert "Data Wrangling & SQL Ninja" in ninja_usage
+    ninja_res = await handler.handle_data_ninja("7-day rolling average in DuckDB")
+    assert len(ninja_res) > 10
+
+    # /soundbite
+    soundbite_usage = await handler.handle_soundbite("")
+    assert "Standup Soundbite" in soundbite_usage
+    soundbite_res = await handler.handle_soundbite("Speculative Decoding")
+    assert len(soundbite_res) > 10
+
 
 def test_command_registry_contains_new_commands():
     assert "review_arch" in COMMANDS
@@ -106,4 +135,10 @@ def test_command_registry_contains_new_commands():
     assert "roi" in COMMANDS
     assert "status" in COMMANDS
     assert "pattern" in COMMANDS
+    assert "optimize_sql" in COMMANDS
+    assert "calc_cost" in COMMANDS
+    assert "runbook" in COMMANDS
+    assert "data_ninja" in COMMANDS
+    assert "soundbite" in COMMANDS
+
 

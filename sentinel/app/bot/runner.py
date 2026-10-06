@@ -304,6 +304,56 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         resp = await cmd_handler.handle_pattern(args)
         await safe_reply(message, resp, parse_mode=None)
 
+    @dp.message(Command("optimize_sql"))
+    async def cmd_optimize_sql(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text.replace("/optimize_sql", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_optimize_sql(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("calc_cost"))
+    @dp.message(Command("tokens"))
+    async def cmd_calc_cost(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/calc_cost", "/tokens"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_calc_cost(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("runbook"))
+    async def cmd_runbook(message: Message):
+        if not await check_auth(message):
+            return
+        service = message.text.replace("/runbook", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_runbook(service)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("data_ninja"))
+    @dp.message(Command("transform"))
+    async def cmd_data_ninja(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/data_ninja", "/transform"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_data_ninja(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("soundbite"))
+    async def cmd_soundbite(message: Message):
+        if not await check_auth(message):
+            return
+        topic = message.text.replace("/soundbite", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_soundbite(topic)
+        await safe_reply(message, resp, parse_mode=None)
+
     @dp.message(Command("help"))
     async def cmd_help(message: Message):
         if not await check_auth(message):

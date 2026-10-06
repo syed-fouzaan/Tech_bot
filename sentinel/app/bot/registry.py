@@ -50,6 +50,13 @@ COMMANDS: Dict[str, CommandInfo] = {
     "status": CommandInfo(name="status", description="Executive 1:1 Status Generator: 60-second high-impact managerial briefing"),
     "one_on_one": CommandInfo(name="one_on_one", description="Executive 1:1 Status Generator: 60-second high-impact managerial briefing"),
     "pattern": CommandInfo(name="pattern", args="[name]", description="Staff System Design Pattern: battle-tested distributed AI and data architecture blueprints"),
+    "optimize_sql": CommandInfo(name="optimize_sql", args="<query/code>", description="Slow SQL & Pipeline Optimizer: query plan bottlenecks, rewrites & indexes"),
+    "calc_cost": CommandInfo(name="calc_cost", args="[qpd] [model]", description="LLM Cost & Token Budget: API billing vs self-hosted GPU break-even & KV cache"),
+    "tokens": CommandInfo(name="tokens", args="[qpd] [model]", description="LLM Cost & Token Budget: API billing vs self-hosted GPU break-even & KV cache"),
+    "runbook": CommandInfo(name="runbook", args="<service>", description="Production Runbook Generator: golden signals, alarms & emergency recovery commands"),
+    "data_ninja": CommandInfo(name="data_ninja", args="<problem>", description="Data Wrangling & SQL Ninja: window functions, complex JSON flattening & DuckDB/Polars"),
+    "transform": CommandInfo(name="transform", args="<problem>", description="Data Wrangling & SQL Ninja: window functions, complex JSON flattening & DuckDB/Polars"),
+    "soundbite": CommandInfo(name="soundbite", args="<topic>", description="Standup Soundbite: 45-second conversational script & tech take for meetings"),
     "clear": CommandInfo(name="clear", description="Reset current conversational history for a fresh chat session"),
     "help": CommandInfo(name="help", description="Show command list and quick reference guide"),
 }
