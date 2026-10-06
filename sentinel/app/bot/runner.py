@@ -247,6 +247,63 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
             resp = await cmd_handler.handle_promo(session, user_id=user_id)
         await safe_reply(message, resp, parse_mode=None)
 
+    @dp.message(Command("drill"))
+    @dp.message(Command("incident"))
+    async def cmd_drill(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/drill", "/incident"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_drill(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("pr_review"))
+    @dp.message(Command("diff"))
+    async def cmd_pr_review(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/pr_review", "/diff"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_pr_review(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("roi"))
+    @dp.message(Command("migrate"))
+    async def cmd_roi(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/roi", "/migrate"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_roi(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("status"))
+    @dp.message(Command("one_on_one"))
+    async def cmd_status(message: Message):
+        if not await check_auth(message):
+            return
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_status(session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("pattern"))
+    async def cmd_pattern(message: Message):
+        if not await check_auth(message):
+            return
+        args = message.text.replace("/pattern", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_pattern(args)
+        await safe_reply(message, resp, parse_mode=None)
+
     @dp.message(Command("help"))
     async def cmd_help(message: Message):
         if not await check_auth(message):

@@ -65,6 +65,34 @@ async def test_bot_handlers_new_commands():
     promo_msg = await handler.handle_promo()
     assert "Promotion" in promo_msg or "Performance" in promo_msg
 
+    # /drill
+    drill_start = await handler.handle_drill()
+    assert "INCIDENT DRILL" in drill_start
+    drill_eval = await handler.handle_drill("solve Drain traffic from the OOM nodes and rollback the max_model_len config")
+    assert len(drill_eval) > 10
+
+    # /pr_review
+    pr_usage = await handler.handle_pr_review("")
+    assert "PR & Git Diff Review" in pr_usage
+    pr_res = await handler.handle_pr_review("def infer(x): y = model(x); return y.cpu().numpy()")
+    assert len(pr_res) > 10
+
+    # /roi
+    roi_usage = await handler.handle_roi("")
+    assert "Migration ROI" in roi_usage
+    roi_res = await handler.handle_roi("Pandas vs Polars")
+    assert len(roi_res) > 10
+
+    # /status
+    status_msg = await handler.handle_status()
+    assert "Executive 1:1" in status_msg
+    assert "SHIPPED" in status_msg
+
+    # /pattern
+    pattern_msg = await handler.handle_pattern("chunked_prefill")
+    assert "Chunked Prefill" in pattern_msg
+    assert "Production Implementation Blueprint" in pattern_msg
+
 
 def test_command_registry_contains_new_commands():
     assert "review_arch" in COMMANDS
@@ -73,3 +101,9 @@ def test_command_registry_contains_new_commands():
     assert "interview" in COMMANDS
     assert "brag" in COMMANDS
     assert "promo" in COMMANDS
+    assert "drill" in COMMANDS
+    assert "pr_review" in COMMANDS
+    assert "roi" in COMMANDS
+    assert "status" in COMMANDS
+    assert "pattern" in COMMANDS
+

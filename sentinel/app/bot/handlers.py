@@ -21,6 +21,11 @@ from sentinel.app.domain.dependencies import parse_dependency_manifest, check_de
 from sentinel.app.domain.architecture_reviewer import ArchitectureReviewer
 from sentinel.app.domain.interview import InterviewEngine
 from sentinel.app.domain.promo import PromoEngine
+from sentinel.app.domain.incident_drill import IncidentDrillEngine
+from sentinel.app.domain.pr_reviewer import PRReviewerEngine
+from sentinel.app.domain.migration_roi import MigrationROIEngine
+from sentinel.app.domain.executive_status import ExecutiveStatusEngine
+from sentinel.app.domain.design_patterns import DesignPatternEngine
 
 
 class BotCommandHandler:
@@ -35,6 +40,11 @@ class BotCommandHandler:
         arch_reviewer: Optional[ArchitectureReviewer] = None,
         interview_engine: Optional[InterviewEngine] = None,
         promo_engine: Optional[PromoEngine] = None,
+        drill_engine: Optional[IncidentDrillEngine] = None,
+        pr_reviewer: Optional[PRReviewerEngine] = None,
+        migration_roi: Optional[MigrationROIEngine] = None,
+        status_engine: Optional[ExecutiveStatusEngine] = None,
+        pattern_engine: Optional[DesignPatternEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -47,6 +57,11 @@ class BotCommandHandler:
         self.arch_reviewer = arch_reviewer or ArchitectureReviewer()
         self.interview_engine = interview_engine or InterviewEngine()
         self.promo_engine = promo_engine or PromoEngine()
+        self.drill_engine = drill_engine or IncidentDrillEngine()
+        self.pr_reviewer = pr_reviewer or PRReviewerEngine()
+        self.migration_roi = migration_roi or MigrationROIEngine()
+        self.status_engine = status_engine or ExecutiveStatusEngine()
+        self.pattern_engine = pattern_engine or DesignPatternEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -395,6 +410,30 @@ class BotCommandHandler:
     async def handle_promo(self, session: Optional[AsyncSession] = None, user_id: int = 0) -> str:
         """Compiles logged work, learnings, and wins into a STAR Promotion/Appraisal Pack."""
         return await self.promo_engine.compile_promotion_pack(session, user_id=user_id)
+
+    async def handle_drill(self, args: str = "") -> str:
+        """Production Incident Drill: simulated Sev-1 triage and RCA evaluation."""
+        args = args.strip()
+        if args.lower().startswith("solve ") or args.lower().startswith("answer "):
+            plan = args.split(" ", 1)[1].strip()
+            return await self.drill_engine.evaluate_drill(plan)
+        return await self.drill_engine.start_drill()
+
+    async def handle_pr_review(self, args: str = "") -> str:
+        """Staff PR Review: scans diffs for GPU leaks, async blocks, and security holes."""
+        return await self.pr_reviewer.review_diff(args)
+
+    async def handle_roi(self, args: str = "") -> str:
+        """Tech Migration ROI Calculator: realistic cloud savings and anti-hype check."""
+        return await self.migration_roi.calculate_roi(args)
+
+    async def handle_status(self, session: Optional[AsyncSession] = None, user_id: int = 0) -> str:
+        """Executive 1:1 Status Generator: 60-second high-impact managerial briefing."""
+        return await self.status_engine.generate_status(session, user_id=user_id)
+
+    async def handle_pattern(self, args: str = "") -> str:
+        """Staff System Design Pattern: battle-tested distributed AI and data architecture blueprints."""
+        return self.pattern_engine.get_pattern(args if args else None)
 
     async def handle_help(self) -> str:
         return get_help_text()
