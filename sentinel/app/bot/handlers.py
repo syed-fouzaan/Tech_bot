@@ -18,6 +18,9 @@ from sentinel.app.domain.conversation import ConversationEngine
 from sentinel.app.domain.win import WorkImpactEngine
 from sentinel.app.domain.lab import LabEngine
 from sentinel.app.domain.dependencies import parse_dependency_manifest, check_dependency_impact, PinnedDependency
+from sentinel.app.domain.architecture_reviewer import ArchitectureReviewer
+from sentinel.app.domain.interview import InterviewEngine
+from sentinel.app.domain.promo import PromoEngine
 
 
 class BotCommandHandler:
@@ -29,6 +32,9 @@ class BotCommandHandler:
         lab_engine: Optional[LabEngine] = None,
         career_advisor: Optional[CareerAdvisorEngine] = None,
         conversation_engine: Optional[ConversationEngine] = None,
+        arch_reviewer: Optional[ArchitectureReviewer] = None,
+        interview_engine: Optional[InterviewEngine] = None,
+        promo_engine: Optional[PromoEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -38,6 +44,9 @@ class BotCommandHandler:
         self.advisor = advisor_engine or AdvisorEngine()
         self.career_advisor = career_advisor or CareerAdvisorEngine()
         self.conversation = conversation_engine or ConversationEngine()
+        self.arch_reviewer = arch_reviewer or ArchitectureReviewer()
+        self.interview_engine = interview_engine or InterviewEngine()
+        self.promo_engine = promo_engine or PromoEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -366,6 +375,26 @@ class BotCommandHandler:
         """Resets recent chat turn history."""
         count = await self.conversation.clear_history(session, user_id)
         return f"🔄 Chat history reset ({count} turns cleared). Ready for a new conversation!"
+
+    async def handle_review_arch(self, args: str) -> str:
+        """Principal Architecture & Code Review ('Roast')."""
+        return await self.arch_reviewer.review_architecture(args)
+
+    async def handle_interview(self, args: str = "") -> str:
+        """Mock Staff System Design Interviewer: generates scenario or grades candidate response."""
+        args = args.strip()
+        if args.lower().startswith("solve ") or args.lower().startswith("answer "):
+            solution = args.split(" ", 1)[1].strip()
+            return await self.interview_engine.evaluate_solution(solution)
+        return await self.interview_engine.get_interview_scenario(args if args else None)
+
+    async def handle_reproduce(self, topic: str) -> str:
+        """1-Click Local 'Prove-It' benchmark script calibrated for local GPU."""
+        return await self.handle_lab(topic)
+
+    async def handle_promo(self, session: Optional[AsyncSession] = None, user_id: int = 0) -> str:
+        """Compiles logged work, learnings, and wins into a STAR Promotion/Appraisal Pack."""
+        return await self.promo_engine.compile_promotion_pack(session, user_id=user_id)
 
     async def handle_help(self) -> str:
         return get_help_text()

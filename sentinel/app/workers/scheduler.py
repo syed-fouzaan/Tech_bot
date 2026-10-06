@@ -46,9 +46,35 @@ class BackgroundScheduler:
             except Exception as e:
                 logger.error("Failed to deliver 10:00 AM brief to user %s: %s", user_id, e)
 
+    async def _send_evening_reflection(self):
+        """Sends the 8:00 PM evening check-in to Telegram to capture daily wins & blocks."""
+        from sentinel.app.api.telegram import bot
+        settings = get_settings()
+        if not bot or not settings.ALLOWED_TELEGRAM_USER_IDS:
+            return
+
+        text = (
+            "🌙 **Evening Engineering Check-In, Syed!**\n\n"
+            "Take 60 seconds to lock in today's progress and update your skill trajectory:\n\n"
+            "1. 🚀 **What did you ship or build today?**\n"
+            "   *(Reply naturally or use `/work <details>`)*\n\n"
+            "2. 💡 **What did you learn or understand?**\n"
+            "   *(Reply naturally or use `/learned <concept>`)*\n\n"
+            "3. 🚧 **What blocked you or slowed you down?**\n\n"
+            "I'll update your living skill matrix and calibrate your 10:00 AM intelligence brief for tomorrow!"
+        )
+
+        for user_id in settings.ALLOWED_TELEGRAM_USER_IDS:
+            try:
+                logger.info("Delivering 8:00 PM evening reflection prompt to Telegram user %s", user_id)
+                await bot.send_message(chat_id=user_id, text=text, parse_mode=None)
+            except Exception as e:
+                logger.error("Failed to deliver evening reflection to user %s: %s", user_id, e)
+
     async def _loop(self):
         settings = get_settings()
         delivery_time = getattr(settings, "DIGEST_DELIVERY_TIME_IST", "10:00")
+        evening_time = getattr(settings, "EVENING_CHECKIN_TIME_IST", "20:00")
         last_ingestion_time = 0
 
         while self._running:
@@ -64,6 +90,13 @@ class BackgroundScheduler:
                     await self._send_daily_10am_brief()
                     self._last_delivered_date = current_date_str
 
+                # Check if it is exact 8:00 PM IST (20:00) and hasn't checked in today
+                evening_tracker = getattr(self, "_last_evening_date", None)
+                if current_time_str == evening_time and evening_tracker != current_date_str:
+                    logger.info("🌙 Triggering scheduled %s IST evening check-in!", evening_time)
+                    await self._send_evening_reflection()
+                    self._last_evening_date = current_date_str
+
                 # Periodic background ingestion every interval_seconds
                 now_timestamp = now_utc.timestamp()
                 if now_timestamp - last_ingestion_time >= self.interval_seconds:
@@ -73,7 +106,7 @@ class BackgroundScheduler:
             except Exception as e:
                 logger.error("Scheduler error: %s", e)
 
-            # Check every 30 seconds to catch exact 10:00 AM minute
+            # Check every 30 seconds to catch exact delivery minutes
             await asyncio.sleep(30)
 
     def start(self):

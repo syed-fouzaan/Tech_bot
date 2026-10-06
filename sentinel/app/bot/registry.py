@@ -35,6 +35,12 @@ COMMANDS: Dict[str, CommandInfo] = {
     "search": CommandInfo(name="search", args="<query>", description="Search verified knowledge store"),
     "profile": CommandInfo(name="profile", description="View and manage user profile and skill inventory"),
     "memory": CommandInfo(name="memory", args="[add <fact>|clear]", description="View, add, or clear facts stored in long-term AI memory"),
+    "review_arch": CommandInfo(name="review_arch", args="<architecture/code>", description="Principal Architecture & Code Reviewer: scale failure points & drop-in refactors"),
+    "roast": CommandInfo(name="roast", args="<architecture/code>", description="Brutally roast an architecture design for scale bottlenecks & compute waste"),
+    "reproduce": CommandInfo(name="reproduce", args="<topic>", description="1-Click Local 'Prove-It' Script: runnable benchmark calibrated for RTX 4060"),
+    "interview": CommandInfo(name="interview", args="[topic | solve <solution>]", description="Mock Staff System Design Interviewer: scenario generation & grading rubrics"),
+    "brag": CommandInfo(name="brag", description="STAR Promotion & Appraisal Dossier: auto-compiles your logged wins & work into executive format"),
+    "promo": CommandInfo(name="promo", description="STAR Promotion & Appraisal Dossier: auto-compiles your logged wins & work into executive format"),
     "clear": CommandInfo(name="clear", description="Reset current conversational history for a fresh chat session"),
     "help": CommandInfo(name="help", description="Show command list and quick reference guide"),
 }

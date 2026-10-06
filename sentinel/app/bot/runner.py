@@ -208,6 +208,45 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
             resp = await cmd_handler.handle_clear(session, user_id=user_id)
         await safe_reply(message, resp, parse_mode=None)
 
+    @dp.message(Command("review_arch"))
+    @dp.message(Command("roast"))
+    async def cmd_review_arch(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/review_arch", "/roast"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_review_arch(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("reproduce"))
+    async def cmd_reproduce(message: Message):
+        if not await check_auth(message):
+            return
+        topic = message.text.replace("/reproduce", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_reproduce(topic)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("interview"))
+    async def cmd_interview(message: Message):
+        if not await check_auth(message):
+            return
+        args = message.text.replace("/interview", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_interview(args)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("brag"))
+    @dp.message(Command("promo"))
+    async def cmd_promo(message: Message):
+        if not await check_auth(message):
+            return
+        user_id = message.from_user.id if message.from_user else 0
+        async with async_session_maker() as session:
+            resp = await cmd_handler.handle_promo(session, user_id=user_id)
+        await safe_reply(message, resp, parse_mode=None)
+
     @dp.message(Command("help"))
     async def cmd_help(message: Message):
         if not await check_auth(message):
