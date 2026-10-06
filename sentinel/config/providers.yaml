@@ -1,0 +1,40 @@
+# Multi-Provider AI Gateway Configuration
+version: 1
+
+guards:
+  daily_budget_usd: 0.0
+  allow_paid_providers: false
+  allow_unknown_cost: false
+
+providers:
+  - id: gemini
+    adapter: gemini
+    cost_class: free
+    default_model: gemini-2.5-flash
+    tasks: [technical_analysis, comparison, final_digest, chat, coding]
+    limits:
+      rpm: 15
+      rpd: 1500
+
+  - id: groq
+    adapter: groq
+    cost_class: free
+    default_model: llama-3.3-70b-versatile
+    tasks: [classification, summarization, importance_scoring, quiz]
+    limits:
+      rpm: 30
+      rpd: 14400
+
+  - id: ollama
+    adapter: ollama
+    cost_class: free
+    default_model: qwen2.5:7b
+    base_url: "http://localhost:11434"
+    tasks: [classification, summarization]
+    notes: "Local offline fallback"
+
+  - id: mock
+    adapter: mock_deterministic
+    cost_class: free
+    tasks: [all]
+    notes: "Zero-cost deterministic safety fallback"

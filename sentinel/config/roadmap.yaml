@@ -1,0 +1,69 @@
+# Living Roadmap Graph (AI & Data Engineering Tracks)
+version: 1
+
+tracks:
+  - id: AI
+    name: "AI & ML Engineering Track"
+    nodes:
+      - id: ai_foundations
+        title: "ML & Deep Learning Foundations (PyTorch, autograd)"
+        difficulty: Beginner
+        estimated_hours: 10
+        status: completed
+      - id: ai_transformers
+        title: "Transformer Architecture & Attention Mechanisms"
+        difficulty: Intermediate
+        prerequisites: [ai_foundations]
+        estimated_hours: 12
+        status: completed
+      - id: ai_rag
+        title: "Production RAG: Hybrid Search, Vector Stores & Evals"
+        difficulty: Intermediate
+        prerequisites: [ai_transformers]
+        estimated_hours: 15
+        status: in_progress
+      - id: ai_agents_mcp
+        title: "Agentic Systems & MCP Protocol (LangGraph, tool calling)"
+        difficulty: Intermediate
+        prerequisites: [ai_rag]
+        estimated_hours: 15
+        status: in_progress
+      - id: ai_inference_vllm
+        title: "Inference Optimization: vLLM & PagedAttention"
+        difficulty: Advanced
+        prerequisites: [ai_transformers]
+        estimated_hours: 20
+        status: pending
+      - id: ai_quantization
+        title: "Model Quantization: AWQ, GPTQ, GGUF"
+        difficulty: Advanced
+        prerequisites: [ai_inference_vllm]
+        estimated_hours: 16
+        status: pending
+
+  - id: DATA
+    name: "Data Engineering Track"
+    nodes:
+      - id: data_sql_modeling
+        title: "Advanced SQL & Dimensional Modeling (Kimball, Medallion)"
+        difficulty: Beginner
+        estimated_hours: 12
+        status: completed
+      - id: data_dbt_transformation
+        title: "Transformations with dbt & Data Quality Testing"
+        difficulty: Intermediate
+        prerequisites: [data_sql_modeling]
+        estimated_hours: 14
+        status: in_progress
+      - id: data_orchestration
+        title: "Pipeline Orchestration (Apache Airflow / Dagster)"
+        difficulty: Intermediate
+        prerequisites: [data_dbt_transformation]
+        estimated_hours: 18
+        status: in_progress
+      - id: data_lakehouse
+        title: "Modern Lakehouse Formats: Parquet, Delta Lake & DuckDB"
+        difficulty: Advanced
+        prerequisites: [data_orchestration]
+        estimated_hours: 16
+        status: pending

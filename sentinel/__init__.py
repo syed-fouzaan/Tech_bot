@@ -1,0 +1,1 @@
+"""Sentinel top-level package."""

@@ -1,0 +1,45 @@
+# Environment variables & secrets (CRITICAL)
+.env
+*.env
+!.env.example
+.env.*
+!.env.example
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+sentinel/sentinel.db
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# System and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.knox/
+
+# External reference skills (downloaded skill folders)
+Understand-Anything/
+agency-agents/
+agent-skills/
+antigravity-awesome-skills/
+awesome-design-md/
+get-shit-done/
+playwright-cli/
+ralph/
+stitch-skills/
+taste-skill/
+ui-ux-pro-max-skill/

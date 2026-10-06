@@ -1,0 +1,39 @@
+# Scoring and Ranking Configuration
+version: 3
+
+weights:
+  technical_impact: 0.20
+  practical_value: 0.20
+  personal_relevance: 0.25
+  novelty: 0.15
+  industry_impact: 0.10
+  learning_value: 0.10
+
+thresholds:
+  must_know: 0.65
+  should_know: 0.55
+  learn: 0.50
+  watch: 0.40
+
+caps:
+  must_know: 3
+  should_know: 4
+  learn: 3
+  watch: 3
+
+evidence_multiplier:
+  L0: 0.60
+  L1: 0.85
+  L2: 1.00
+  L3: 1.10
+
+freshness_half_life_days:
+  release: 3
+  research: 14
+  tutorial: 30
+  security: 2
+
+fatigue:
+  window_days: 7
+  penalty_per_repeat: 0.15
+  max_penalty: 0.50

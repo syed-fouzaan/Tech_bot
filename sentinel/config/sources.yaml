@@ -1,0 +1,43 @@
+# Source Registry Configuration
+version: 1
+
+sources:
+  - id: arxiv_cs
+    type: arxiv
+    name: "arXiv CS (AI, LG, CL)"
+    enabled: true
+    reliability_tier: 9
+    categories: [research]
+    rate_limit_rps: 0.3
+
+  - id: hf_models
+    type: huggingface
+    name: "Hugging Face Trending Models"
+    enabled: true
+    reliability_tier: 10
+    categories: [models]
+    rate_limit_rps: 1.0
+
+  - id: github_releases
+    type: github
+    name: "GitHub Releases (vLLM, Transformers, Ollama, Airflow, dbt)"
+    enabled: true
+    reliability_tier: 9
+    categories: [code, infrastructure]
+    rate_limit_rps: 1.0
+
+  - id: lab_blogs
+    type: rss
+    name: "AI Lab & Platform Blogs (OpenAI, DeepMind, AWS, Databricks)"
+    enabled: true
+    reliability_tier: 9
+    categories: [labs, engineering]
+    rate_limit_rps: 0.5
+
+  - id: hackernews_ai
+    type: hackernews
+    name: "Hacker News Discussions"
+    enabled: true
+    reliability_tier: 4
+    categories: [community]
+    rate_limit_rps: 1.0
