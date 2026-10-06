@@ -57,6 +57,11 @@ COMMANDS: Dict[str, CommandInfo] = {
     "data_ninja": CommandInfo(name="data_ninja", args="<problem>", description="Data Wrangling & SQL Ninja: window functions, complex JSON flattening & DuckDB/Polars"),
     "transform": CommandInfo(name="transform", args="<problem>", description="Data Wrangling & SQL Ninja: window functions, complex JSON flattening & DuckDB/Polars"),
     "soundbite": CommandInfo(name="soundbite", args="<topic>", description="Standup Soundbite: 45-second conversational script & tech take for meetings"),
+    "profile_script": CommandInfo(name="profile_script", args="<code/loop>", description="Python Script & Memory Leak Hunter: scans loops for bloat & emits vectorized rewrites"),
+    "debug_code": CommandInfo(name="debug_code", args="<code/loop>", description="Python Script & Memory Leak Hunter: scans loops for bloat & emits vectorized rewrites"),
+    "guardrails": CommandInfo(name="guardrails", args="<spec>", description="Data Quality Guardrails Generator: Pandera/Pydantic schemas to stop bad data"),
+    "parse_log": CommandInfo(name="parse_log", args="<log lines>", description="Regex & Log Parser Synthesizer: converts raw logs into clean tabular pipelines"),
+    "run_py": CommandInfo(name="run_py", args="<code>", description="Sandboxed Python Quick-Runner: safely executes math, datetime, formulas directly"),
     "clear": CommandInfo(name="clear", description="Reset current conversational history for a fresh chat session"),
     "help": CommandInfo(name="help", description="Show command list and quick reference guide"),
 }

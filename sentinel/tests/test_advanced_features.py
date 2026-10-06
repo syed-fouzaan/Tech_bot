@@ -122,6 +122,41 @@ async def test_bot_handlers_new_commands():
     soundbite_res = await handler.handle_soundbite("Speculative Decoding")
     assert len(soundbite_res) > 10
 
+    # /profile_script
+    profile_usage = await handler.handle_profile_script("")
+    assert "Memory Leak Hunter" in profile_usage
+    profile_res = await handler.handle_profile_script("for i in range(100): df = pd.concat([df, row])")
+    assert len(profile_res) > 10
+
+    # /guardrails
+    guardrails_usage = await handler.handle_guardrails("")
+    assert "Data Quality Guardrails" in guardrails_usage
+    guardrails_res = await handler.handle_guardrails("stoppages: timestamp, machine_id int, reason str")
+    assert len(guardrails_res) > 10
+
+    # /parse_log
+    log_usage = await handler.handle_parse_log("")
+    assert "Log Parser" in log_usage
+    log_res = await handler.handle_parse_log("2026-10-06 14:00:00 [STOPPAGE] ID=42 Duration=120s")
+    assert len(log_res) > 10
+
+    # /run_py (Sandboxed execution)
+    py_calc = await handler.handle_run_py("5000 * 12 / 100")
+    assert "600.0" in py_calc or "600" in py_calc
+
+    py_print = await handler.handle_run_py("import math; print(math.sqrt(144))")
+    assert "12.0" in py_print
+
+    py_blocked = await handler.handle_run_py("import os; os.system('echo test')")
+    assert "Execution Blocked" in py_blocked
+
+
+def test_quick_actions_keyboard():
+    from sentinel.app.bot.keyboards import get_quick_actions_keyboard
+    kb = get_quick_actions_keyboard()
+    assert kb is not None
+    assert len(kb.inline_keyboard) >= 4
+
 
 def test_command_registry_contains_new_commands():
     assert "review_arch" in COMMANDS
@@ -140,5 +175,10 @@ def test_command_registry_contains_new_commands():
     assert "runbook" in COMMANDS
     assert "data_ninja" in COMMANDS
     assert "soundbite" in COMMANDS
+    assert "profile_script" in COMMANDS
+    assert "guardrails" in COMMANDS
+    assert "parse_log" in COMMANDS
+    assert "run_py" in COMMANDS
+
 
 

@@ -4,9 +4,10 @@ import logging
 from typing import Optional
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import Message, Update
+from aiogram.types import Message, Update, CallbackQuery
 from sentinel.app.config import Settings, get_settings
 from sentinel.app.bot.handlers import BotCommandHandler
+from sentinel.app.bot.keyboards import get_quick_actions_keyboard
 from sentinel.app.db import async_session_maker
 
 logger = logging.getLogger(__name__)
@@ -32,12 +33,12 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
                 return False
         return True
 
-    async def safe_reply(message: Message, text: str, parse_mode: Optional[str] = "HTML"):
+    async def safe_reply(message: Message, text: str, parse_mode: Optional[str] = "HTML", reply_markup=None):
         try:
-            await message.reply(text, parse_mode=parse_mode)
+            await message.reply(text, parse_mode=parse_mode, reply_markup=reply_markup)
         except Exception:
             try:
-                await message.reply(text)
+                await message.reply(text, reply_markup=reply_markup)
             except Exception as e:
                 logger.error("Failed to send message: %s", e)
 
@@ -46,7 +47,7 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         if not await check_auth(message):
             return
         resp = await cmd_handler.handle_start(message.from_user.id if message.from_user else 0)
-        await safe_reply(message, resp, parse_mode="HTML")
+        await safe_reply(message, resp, parse_mode="HTML", reply_markup=get_quick_actions_keyboard())
 
     @dp.message(Command("today"))
     @dp.message(Command("digest"))
@@ -56,7 +57,7 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         user_id = message.from_user.id if message.from_user else 0
         async with async_session_maker() as session:
             resp = await cmd_handler.handle_today(session, user_id=user_id)
-        await safe_reply(message, resp, parse_mode="HTML")
+        await safe_reply(message, resp, parse_mode="HTML", reply_markup=get_quick_actions_keyboard())
 
     @dp.message(Command("important"))
     async def cmd_important(message: Message):
@@ -353,6 +354,81 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         topic = message.text.replace("/soundbite", "").strip() if message.text else ""
         resp = await cmd_handler.handle_soundbite(topic)
         await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("profile_script"))
+    @dp.message(Command("debug_code"))
+    async def cmd_profile_script(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text or ""
+        for prefix in ["/profile_script", "/debug_code"]:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        resp = await cmd_handler.handle_profile_script(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("guardrails"))
+    async def cmd_guardrails(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text.replace("/guardrails", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_guardrails(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("parse_log"))
+    async def cmd_parse_log(message: Message):
+        if not await check_auth(message):
+            return
+        text = message.text.replace("/parse_log", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_parse_log(text)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.message(Command("run_py"))
+    async def cmd_run_py(message: Message):
+        if not await check_auth(message):
+            return
+        code = message.text.replace("/run_py", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_run_py(code)
+        await safe_reply(message, resp, parse_mode=None)
+
+    @dp.callback_query()
+    async def handle_callback_actions(call: CallbackQuery):
+        """Processes 1-tap interactive inline keyboard button actions."""
+        if not call.message:
+            return
+        try:
+            await call.answer()
+        except Exception:
+            pass
+
+        action = call.data
+        if action == "act_reproduce":
+            resp = await cmd_handler.handle_reproduce("vllm")
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_soundbite":
+            resp = await cmd_handler.handle_soundbite("Speculative Decoding")
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_status":
+            user_id = call.from_user.id if call.from_user else 0
+            async with async_session_maker() as session:
+                resp = await cmd_handler.handle_status(session, user_id=user_id)
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_pattern":
+            resp = await cmd_handler.handle_pattern()
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_drill":
+            resp = await cmd_handler.handle_drill()
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_ninja":
+            resp = await cmd_handler.handle_data_ninja("")
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_sql":
+            resp = await cmd_handler.handle_optimize_sql("")
+            await safe_reply(call.message, resp, parse_mode=None)
+        elif action == "act_cost":
+            resp = await cmd_handler.handle_calc_cost("5000 gpt-4o-mini")
+            await safe_reply(call.message, resp, parse_mode=None)
 
     @dp.message(Command("help"))
     async def cmd_help(message: Message):

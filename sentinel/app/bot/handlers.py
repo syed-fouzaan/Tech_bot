@@ -31,6 +31,10 @@ from sentinel.app.domain.cost_calculator import CostCalculatorEngine
 from sentinel.app.domain.runbook_generator import RunbookEngine
 from sentinel.app.domain.data_ninja import DataNinjaEngine
 from sentinel.app.domain.standup_soundbite import StandupSoundbiteEngine
+from sentinel.app.domain.script_profiler import ScriptProfilerEngine
+from sentinel.app.domain.data_guardrails import DataGuardrailsEngine
+from sentinel.app.domain.log_parser import LogParserEngine
+from sentinel.app.domain.safe_eval import SafePythonRunner
 
 
 class BotCommandHandler:
@@ -55,6 +59,10 @@ class BotCommandHandler:
         runbook_engine: Optional[RunbookEngine] = None,
         data_ninja: Optional[DataNinjaEngine] = None,
         soundbite_engine: Optional[StandupSoundbiteEngine] = None,
+        script_profiler: Optional[ScriptProfilerEngine] = None,
+        guardrails_engine: Optional[DataGuardrailsEngine] = None,
+        log_parser: Optional[LogParserEngine] = None,
+        safe_eval: Optional[SafePythonRunner] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -77,6 +85,10 @@ class BotCommandHandler:
         self.runbook_engine = runbook_engine or RunbookEngine()
         self.data_ninja = data_ninja or DataNinjaEngine()
         self.soundbite_engine = soundbite_engine or StandupSoundbiteEngine()
+        self.script_profiler = script_profiler or ScriptProfilerEngine()
+        self.guardrails_engine = guardrails_engine or DataGuardrailsEngine()
+        self.log_parser = log_parser or LogParserEngine()
+        self.safe_eval = safe_eval or SafePythonRunner()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -469,6 +481,22 @@ class BotCommandHandler:
     async def handle_soundbite(self, args: str = "") -> str:
         """Standup Soundbite: 45-second conversational script & tech take for meetings."""
         return await self.soundbite_engine.generate_soundbite(args)
+
+    async def handle_profile_script(self, args: str = "") -> str:
+        """Python Script & Memory Leak Hunter: scans loops for bloat & emits vectorized code."""
+        return await self.script_profiler.profile_code(args)
+
+    async def handle_guardrails(self, args: str = "") -> str:
+        """Data Quality Guardrails Generator: Pandera/Pydantic schemas to stop bad data."""
+        return await self.guardrails_engine.generate_guardrails(args)
+
+    async def handle_parse_log(self, args: str = "") -> str:
+        """Regex & Log Parser Synthesizer: converts raw logs into clean tabular pipelines."""
+        return await self.log_parser.parse_log_sample(args)
+
+    async def handle_run_py(self, args: str = "") -> str:
+        """Sandboxed Python Quick-Runner: safely executes math, datetime, formulas directly."""
+        return self.safe_eval.execute(args)
 
     async def handle_help(self) -> str:
         return get_help_text()
