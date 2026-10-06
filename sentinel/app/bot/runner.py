@@ -392,6 +392,14 @@ def create_dispatcher(handler: Optional[BotCommandHandler] = None) -> Dispatcher
         resp = await cmd_handler.handle_run_py(code)
         await safe_reply(message, resp, parse_mode=None)
 
+    @dp.message(Command("gen_tests"))
+    async def cmd_gen_tests(message: Message):
+        if not await check_auth(message):
+            return
+        code = message.text.replace("/gen_tests", "").strip() if message.text else ""
+        resp = await cmd_handler.handle_gen_tests(code)
+        await safe_reply(message, resp, parse_mode=None)
+
     @dp.callback_query()
     async def handle_callback_actions(call: CallbackQuery):
         """Processes 1-tap interactive inline keyboard button actions."""

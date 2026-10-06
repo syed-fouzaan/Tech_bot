@@ -35,6 +35,7 @@ from sentinel.app.domain.script_profiler import ScriptProfilerEngine
 from sentinel.app.domain.data_guardrails import DataGuardrailsEngine
 from sentinel.app.domain.log_parser import LogParserEngine
 from sentinel.app.domain.safe_eval import SafePythonRunner
+from sentinel.app.domain.test_generator import TestSuiteGeneratorEngine
 
 
 class BotCommandHandler:
@@ -63,6 +64,7 @@ class BotCommandHandler:
         guardrails_engine: Optional[DataGuardrailsEngine] = None,
         log_parser: Optional[LogParserEngine] = None,
         safe_eval: Optional[SafePythonRunner] = None,
+        test_generator: Optional[TestSuiteGeneratorEngine] = None,
     ):
         self.session_factory = session_factory
         self.profile = get_default_profile()
@@ -89,6 +91,7 @@ class BotCommandHandler:
         self.guardrails_engine = guardrails_engine or DataGuardrailsEngine()
         self.log_parser = log_parser or LogParserEngine()
         self.safe_eval = safe_eval or SafePythonRunner()
+        self.test_generator = test_generator or TestSuiteGeneratorEngine()
         self.work_impact = WorkImpactEngine()
         self.lab = lab_engine or LabEngine()
         self.pinned_deps: List[PinnedDependency] = parse_dependency_manifest(
@@ -497,6 +500,10 @@ class BotCommandHandler:
     async def handle_run_py(self, args: str = "") -> str:
         """Sandboxed Python Quick-Runner: safely executes math, datetime, formulas directly."""
         return self.safe_eval.execute(args)
+
+    async def handle_gen_tests(self, args: str = "") -> str:
+        """Automated Test Suite Generator: generates full pytest suites with edge cases & fixtures."""
+        return await self.test_generator.generate_test_suite(args)
 
     async def handle_help(self) -> str:
         return get_help_text()

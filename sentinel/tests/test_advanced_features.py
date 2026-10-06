@@ -150,6 +150,12 @@ async def test_bot_handlers_new_commands():
     py_blocked = await handler.handle_run_py("import os; os.system('echo test')")
     assert "Execution Blocked" in py_blocked
 
+    # /gen_tests
+    test_gen_usage = await handler.handle_gen_tests("")
+    assert "Test Suite Generator" in test_gen_usage
+    test_gen_code = await handler.handle_gen_tests("def calculate_scrap_rate(scraps, total): return scraps / total if total > 0 else 0.0")
+    assert len(test_gen_code) > 10
+
 
 def test_quick_actions_keyboard():
     from sentinel.app.bot.keyboards import get_quick_actions_keyboard
@@ -179,6 +185,8 @@ def test_command_registry_contains_new_commands():
     assert "guardrails" in COMMANDS
     assert "parse_log" in COMMANDS
     assert "run_py" in COMMANDS
+    assert "gen_tests" in COMMANDS
+
 
 
 

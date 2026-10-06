@@ -62,6 +62,7 @@ COMMANDS: Dict[str, CommandInfo] = {
     "guardrails": CommandInfo(name="guardrails", args="<spec>", description="Data Quality Guardrails Generator: Pandera/Pydantic schemas to stop bad data"),
     "parse_log": CommandInfo(name="parse_log", args="<log lines>", description="Regex & Log Parser Synthesizer: converts raw logs into clean tabular pipelines"),
     "run_py": CommandInfo(name="run_py", args="<code>", description="Sandboxed Python Quick-Runner: safely executes math, datetime, formulas directly"),
+    "gen_tests": CommandInfo(name="gen_tests", args="<function/code>", description="Automated Test Suite Generator: generates full pytest suites with edge cases & fixtures"),
     "clear": CommandInfo(name="clear", description="Reset current conversational history for a fresh chat session"),
     "help": CommandInfo(name="help", description="Show command list and quick reference guide"),
 }
