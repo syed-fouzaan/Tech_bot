@@ -50,11 +50,35 @@ async def lifespan(app: FastAPI):
     scheduler.stop()
 
 
+class HeadMethodMiddleware:
+    """Seamlessly handle HTTP HEAD requests for uptime monitors and health checks."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "HEAD":
+            scope["method"] = "GET"
+
+            async def send_wrapper(message: dict):
+                if message["type"] == "http.response.body":
+                    await send({**message, "body": b""})
+                else:
+                    await send(message)
+
+            await self.app(scope, receive, send_wrapper)
+            return
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version="2.1.0",
     lifespan=lifespan,
 )
+
+# Support HEAD requests across all endpoints (e.g. Better Uptime, UptimeRobot, Render)
+app.add_middleware(HeadMethodMiddleware)
 
 # Include modular API routers
 app.include_router(api_router)

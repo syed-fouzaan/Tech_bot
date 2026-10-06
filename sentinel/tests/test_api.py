@@ -16,6 +16,19 @@ async def test_health_endpoint():
 
 
 @pytest.mark.asyncio
+async def test_head_requests_for_uptime_monitors():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp_health = await client.head("/health")
+        assert resp_health.status_code == 200
+        assert resp_health.text == ""
+
+        resp_root = await client.head("/")
+        assert resp_root.status_code == 200
+        assert resp_root.text == ""
+
+
+@pytest.mark.asyncio
 async def test_ready_endpoint():
     await init_db()
     transport = ASGITransport(app=app)
